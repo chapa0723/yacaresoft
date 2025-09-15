@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recuperar Contraseña</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f2f2f2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .recover-container {
+      background-color: #fff;
+      padding: 2em;
+      border-radius: 5px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      width: 320px;
+    }
+    .recover-container h2 {
+      text-align: center;
+      margin-bottom: 1.5em;
+    }
+    .recover-container label {
+      display: block;
+      margin-bottom: 0.5em;
+      font-weight: bold;
+    }
+    .recover-container input[type="email"] {
+      width: 100%;
+      padding: 0.5em;
+      margin-bottom: 1em;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+      box-sizing: border-box;
+    }
+    .recover-container button {
+      width: 100%;
+      padding: 0.7em;
+      border: none;
+      border-radius: 3px;
+      background-color: #28a745;
+      color: #fff;
+      font-size: 1em;
+      cursor: pointer;
+    }
+    .recover-container button:disabled {
+      background-color: #aaa;
+      cursor: not-allowed;
+    }
+    .recover-container .error-message {
+      color: red;
+      font-size: 0.9em;
+      margin-bottom: 1em;
+      display: none;
+    }
+    .link-container {
+      margin-top: 1em;
+      text-align: center;
+    }
+    .link-container a {
+      color: #007BFF;
+      text-decoration: none;
+      margin: 0 0.5em;
+    }
+    .link-container a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="recover-container">
+    <h2>Recuperar contraseña</h2>
+    <form id="recoverForm" action="/recuperar-contraseña" method="POST">
+      <label for="email">Correo electrónico</label>
+      <input type="email" id="email" name="email" placeholder="usuario@ejemplo.com" required>
+      <div class="error-message" id="emailError">Por favor ingresa un correo electrónico válido.</div>
+
+      <button type="submit" id="submitBtn" disabled>Enviar enlace de recuperación</button>
+    </form>
+
+    <div class="link-container">
+      <a href="/login">Volver al Login</a>
+      <a href="/crear-user">Crear cuenta</a>
+    </div>
+  </div>
+
+  <script>
+    const emailInput = document.getElementById('email');
+    const submitBtn = document.getElementById('submitBtn');
+    const emailError = document.getElementById('emailError');
+
+    function validateEmailFormat(email) {
+      // expresión regular simple para verificar formato básico
+      const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      return re.test(email);
+    }
+
+    emailInput.addEventListener('input', function() {
+      const email = emailInput.value.trim();
+
+      if (email === '') {
+        submitBtn.disabled = true;
+        emailError.style.display = 'none';
+      } else if (!validateEmailFormat(email)) {
+        submitBtn.disabled = true;
+        emailError.style.display = 'block';
+      } else {
+        submitBtn.disabled = false;
+        emailError.style.display = 'none';
+      }
+    });
+
+    document.getElementById('recoverForm').addEventListener('submit', function(event) {
+      const email = emailInput.value.trim();
+      if (!validateEmailFormat(email)) {
+        event.preventDefault();
+        emailError.style.display = 'block';
+        alert('Ingresa un correo electrónico válido antes de enviar.');
+      }
+      // Si está bien, el formulario se envía al servidor
+    });
+  </script>
+</body>
+</html>

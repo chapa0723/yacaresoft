@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Crear Usuario</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f2f2f2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .signup-container {
+      background-color: #fff;
+      padding: 2em;
+      border-radius: 5px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      width: 350px;
+    }
+    .signup-container h2 {
+      text-align: center;
+      margin-bottom: 1.5em;
+    }
+    .signup-container label {
+      display: block;
+      margin-bottom: 0.5em;
+      font-weight: bold;
+    }
+    .signup-container input[type="text"],
+    .signup-container input[type="email"] {
+      width: 100%;
+      padding: 0.5em;
+      margin-bottom: 1em;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+      box-sizing: border-box;
+    }
+    .signup-container button {
+      width: 100%;
+      padding: 0.7em;
+      border: none;
+      border-radius: 3px;
+      background-color: #28a745;
+      color: #fff;
+      font-size: 1em;
+      cursor: pointer;
+    }
+    .signup-container button:disabled {
+      background-color: #aaa;
+      cursor: not-allowed;
+    }
+    .error-message {
+      color: red;
+      font-size: 0.9em;
+      margin-bottom: 1em;
+      display: none;
+    }
+    .link-container {
+      margin-top: 1em;
+      text-align: center;
+    }
+    .link-container a {
+      color: #007BFF;
+      text-decoration: none;
+      margin: 0 0.5em;
+    }
+    .link-container a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="signup-container">
+    <h2>Crear cuenta</h2>
+    <form id="signupForm" action="/crear-usuario" method="POST">
+      <label for="firstName">Nombre</label>
+      <input type="text" id="firstName" name="firstName" placeholder="Tu nombre" required>
+      <div class="error-message" id="firstNameError">Por favor ingresa tu nombre.</div>
+
+      <label for="lastName">Apellido</label>
+      <input type="text" id="lastName" name="lastName" placeholder="Tu apellido" required>
+      <div class="error-message" id="lastNameError">Por favor ingresa tu apellido.</div>
+
+      <label for="email">Correo electrónico</label>
+      <input type="email" id="email" name="email" placeholder="usuario@ejemplo.com" required>
+      <div class="error-message" id="emailError">Por favor ingresa un correo electrónico válido.</div>
+
+      <button type="submit" id="submitBtn" disabled>Crear cuenta</button>
+    </form>
+
+    <div class="link-container">
+      <a href="/login">Volver al Login</a>
+      <a href="/recup-pass">Recuperar contraseña</a>
+    </div>
+  </div>
+
+  <script>
+    const firstNameInput = document.getElementById('firstName');
+    const lastNameInput = document.getElementById('lastName');
+    const emailInput = document.getElementById('email');
+    const submitBtn = document.getElementById('submitBtn');
+
+    const firstNameError = document.getElementById('firstNameError');
+    const lastNameError = document.getElementById('lastNameError');
+    const emailError = document.getElementById('emailError');
+
+    function validateEmailFormat(email) {
+      const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      return re.test(email);
+    }
+
+    function validateForm() {
+      let valid = true;
+
+      // Validar nombre
+      if (firstNameInput.value.trim() === '') {
+        firstNameError.style.display = 'block';
+        valid = false;
+      } else {
+        firstNameError.style.display = 'none';
+      }
+
+      // Validar apellido
+      if (lastNameInput.value.trim() === '') {
+        lastNameError.style.display = 'block';
+        valid = false;
+      } else {
+        lastNameError.style.display = 'none';
+      }
+
+      // Validar correo
+      const emailVal = emailInput.value.trim();
+      if (emailVal === '' || !validateEmailFormat(emailVal)) {
+        emailError.style.display = 'block';
+        valid = false;
+      } else {
+        emailError.style.display = 'none';
+      }
+
+      // Habilitar o deshabilitar botón
+      submitBtn.disabled = !valid;
+    }
+
+    firstNameInput.addEventListener('input', validateForm);
+    lastNameInput.addEventListener('input', validateForm);
+    emailInput.addEventListener('input', validateForm);
+
+    document.getElementById('signupForm').addEventListener('submit', function(event) {
+      validateForm();
+      if (submitBtn.disabled) {
+        event.preventDefault();
+        alert('Por favor completa los campos correctamente antes de continuar.');
+      }
+      // Si todo está bien, se envía el formulario normalmente
+    });
+  </script>
+</body>
+</html>
