@@ -26,3 +26,6 @@ urlpatterns = [
     path('crear-user/', crear_usuario),
     path('recup-pass/', recuperar_contrasena),
 ]
+
+
+
