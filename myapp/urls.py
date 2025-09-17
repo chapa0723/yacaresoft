@@ -27,6 +27,7 @@ urlpatterns = [
     path('recup-pass/', recuperar_contrasena),
     path('newcode/', validar_codigo),
     path('newpass/', nueva_contrasena),
+    path('admin_panel/', admin_panel),
 ]
 
 

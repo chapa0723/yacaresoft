@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Panel Admin - Usuarios & Configuración</title>
+  <style>
+    :root{--bg:#f5f7fb;--card:#ffffff;--accent:#2563eb;--muted:#6b7280}
+    body{font-family:Inter, system-ui, Arial, sans-serif;background:var(--bg);margin:0;padding:24px}
+    h1{margin:0 0 12px;font-size:20px}
+    .layout{display:grid;grid-template-columns:1fr 420px;gap:20px}
+    .card{background:var(--card);border-radius:10px;padding:16px;box-shadow:0 6px 18px rgba(15,23,42,0.06)}
+    form{display:flex;flex-direction:column;gap:8px}
+    label{font-size:13px;color:var(--muted)}
+    input,select,textarea{padding:10px;border:1px solid #e6e9ef;border-radius:8px;font-size:14px}
+    button{background:var(--accent);color:white;border:0;padding:10px;border-radius:8px;cursor:pointer}
+    .row{display:flex;gap:8px}
+    .small{font-size:13px;color:var(--muted)}
+    .section-title{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+    .list{margin-top:10px;display:flex;flex-direction:column;gap:8px}
+    .item{padding:10px;border-radius:8px;border:1px solid #eef2ff;background:#fbfdff;display:flex;justify-content:space-between;align-items:center}
+    .muted{color:var(--muted)}
+    .danger{background:#fff7f7;border-color:#ffd6d6}
+    textarea{min-height:80px}
+    .hint{font-size:12px;color:#9ca3af}
+  </style>
+</head>
+<body>
+  <h1>Panel de administración</h1>
+  <p class="small">Desde aquí el administrador puede crear usuarios, grupos de trabajo, categorías de tickets y plantillas de respuesta.</p>
+
+  <div class="layout">
+    <div>
+      <div class="card" id="userCard">
+        <div class="section-title">
+          <strong>Crear usuario</strong>
+        </div>
+        <form id="userForm">
+          <label>Nombre de usuario</label>
+          <input type="text" id="username" required />
+
+          <label>Email</label>
+          <input type="email" id="email" required />
+
+          <label>Rol</label>
+          <select id="role">
+            <option value="agent">Agente</option>
+            <option value="admin">Administrador</option>
+          </select>
+
+          <label>Grupo de trabajo (opcional)</label>
+          <select id="groupSelect">
+            <option value="">-- ninguno --</option>
+          </select>
+
+          <label>Contraseña (temporal)</label>
+          <input type="password" id="password" placeholder="Generar o definir" />
+
+          <div class="row">
+            <button type="button" onclick="createUser()">Crear usuario</button>
+            <button type="button" onclick="generateTempPassword()">Generar</button>
+          </div>
+
+          <p class="hint">Se enviará un email al usuario con instrucciones (implementa esto en tu backend).</p>
+        </form>
+
+        <div class="list" id="usersList"></div>
+      </div>
+
+      <div style="height:16px"></div>
+
+      <div class="card" id="groupsCard">
+        <div class="section-title"><strong>Grupos de trabajo</strong></div>
+        <form id="groupForm">
+          <label>Nombre del grupo</label>
+          <input type="text" id="groupName" />
+          <label>Descripción</label>
+          <input type="text" id="groupDesc" />
+          <div class="row">
+            <button type="button" onclick="createGroup()">Crear grupo</button>
+          </div>
+        </form>
+
+        <div class="list" id="groupsList"></div>
+      </div>
+
+      <div style="height:16px"></div>
+
+      <div class="card" id="categoriesCard">
+        <div class="section-title"><strong>Categorías de tickets</strong></div>
+        <form id="catForm">
+          <label>Nombre de la categoría</label>
+          <input type="text" id="catName" />
+          <label>Descripción</label>
+          <input type="text" id="catDesc" />
+          <div class="row">
+            <button type="button" onclick="createCategory()">Crear categoría</button>
+          </div>
+        </form>
+
+        <div class="list" id="catsList"></div>
+      </div>
+
+    </div>
+
+    <div>
+      <div class="card">
+        <div class="section-title"><strong>Plantillas de respuesta</strong></div>
+        <form id="templateForm">
+          <label>Nombre de la plantilla</label>
+          <input type="text" id="tplName" />
+
+          <label>Asunto (opcional)</label>
+          <input type="text" id="tplSubject" />
+
+          <label>Contenido</label>
+          <textarea id="tplContent"></textarea>
+
+          <div class="row">
+            <button type="button" onclick="createTemplate()">Crear plantilla</button>
+          </div>
+        </form>
+
+        <div class="list" id="tplList"></div>
+      </div>
+
+      <div style="height:12px"></div>
+
+      <div class="card">
+        <strong>Acciones rápidas</strong>
+        <div style="margin-top:8px">
+          <button onclick="reloadAll()">Recargar datos</button>
+          <button onclick="deleteAllTest()" style="margin-left:8px;background:#ef4444">Eliminar items de prueba</button>
+        </div>
+        <p class="muted" style="margin-top:8px">Las llamadas a la API deben implementarse en sus rutas correspondientes. Los endpoints por defecto que usa este panel:</p>
+        <ul class="muted">
+          <li>/api/admin/users/ (POST, GET, DELETE)</li>
+          <li>/api/admin/groups/ (POST, GET, DELETE)</li>
+          <li>/api/admin/categories/ (POST, GET, DELETE)</li>
+          <li>/api/admin/templates/ (POST, GET, DELETE)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- Helpers ---
+    function getCookie(name) {
+      const v = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+      return v ? v.pop() : '';
+    }
+
+    function showList(containerId, items, renderFn) {
+      const c = document.getElementById(containerId);
+      c.innerHTML = '';
+      items.forEach(it => {
+        const div = document.createElement('div');
+        div.className = 'item';
+        div.innerHTML = renderFn(it);
+        c.appendChild(div);
+      });
+    }
+
+    function apiFetch(url, method='GET', body=null) {
+      const opts = { method, headers: {'Content-Type':'application/json', 'X-CSRFToken': getCookie('csrftoken') } };
+      if (body) opts.body = JSON.stringify(body);
+      return fetch(url, opts).then(r => r.json().then(j => ({ok:r.ok, status:r.status, body:j}))).catch(e=>({ok:false,error:e}));
+    }
+
+    // --- CRUD actions ---
+    async function loadGroups(){
+      const res = await apiFetch('/api/admin/groups/');
+      if(res.ok) {
+        populateGroupSelect(res.body || []);
+        showList('groupsList', res.body || [], g=>`<div><strong>${escapeHtml(g.name)}</strong><div class="muted">${escapeHtml(g.description||'')}</div></div><div><button onclick="deleteGroup('${g.id}')">Eliminar</button></div>`);
+      }
+    }
+
+    async function loadUsers(){
+      const res = await apiFetch('/api/admin/users/');
+      if(res.ok) showList('usersList', res.body || [], u=>`<div><strong>${escapeHtml(u.username)}</strong><div class="muted">${escapeHtml(u.email)} • ${escapeHtml(u.role||'')}</div></div><div><button onclick="deleteUser('${u.id}')">Eliminar</button></div>`);
+    }
+
+    async function loadCats(){
+      const res = await apiFetch('/api/admin/categories/');
+      if(res.ok) showList('catsList', res.body || [], c=>`<div><strong>${escapeHtml(c.name)}</strong><div class="muted">${escapeHtml(c.description||'')}</div></div><div><button onclick="deleteCategory('${c.id}')">Eliminar</button></div>`);
+    }
+
+    async function loadTemplates(){
+      const res = await apiFetch('/api/admin/templates/');
+      if(res.ok) showList('tplList', res.body || [], t=>`<div><strong>${escapeHtml(t.name)}</strong><div class="muted">${escapeHtml(t.subject||'')}</div></div><div><button onclick="deleteTemplate('${t.id}')">Eliminar</button></div>`);
+    }
+
+    async function reloadAll(){ await Promise.all([loadGroups(), loadUsers(), loadCats(), loadTemplates()]); }
+
+    function populateGroupSelect(groups){
+      const sel = document.getElementById('groupSelect');
+      sel.innerHTML = '<option value="">-- ninguno --</option>' + (groups.map(g=>`<option value="${g.id}">${escapeHtml(g.name)}</option>`).join(''));
+    }
+
+    function escapeHtml(s){ if(!s) return ''; return s.replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"})[c]); }
+
+    async function createUser(){
+      const payload = { username: document.getElementById('username').value.trim(), email: document.getElementById('email').value.trim(), role: document.getElementById('role').value, group_id: document.getElementById('groupSelect').value || null, password: document.getElementById('password').value };
+      if(!payload.username || !payload.email) return alert('username y email requeridos');
+      const res = await apiFetch('/api/admin/users/', 'POST', payload);
+      if(res.ok) { alert('Usuario creado'); document.getElementById('userForm').reset(); loadUsers(); }
+      else alert('Error: ' + (res.body && res.body.error ? res.body.error : JSON.stringify(res.body)));
+    }
+
+    function generateTempPassword(){
+      const pass = Array.from({length:12}, ()=>String.fromCharCode(33 + Math.floor(Math.random()*94))).join('');
+      document.getElementById('password').value = pass;
+      alert('Contraseña temporal generada (pégala donde la necesites)');
+    }
+
+    async function createGroup(){
+      const name = document.getElementById('groupName').value.trim();
+      const desc = document.getElementById('groupDesc').value.trim();
+      if(!name) return alert('Nombre requerido');
+      const res = await apiFetch('/api/admin/groups/', 'POST', {name, description:desc});
+      if(res.ok){ document.getElementById('groupForm').reset(); loadGroups(); }
+      else alert('Error creando grupo');
+    }
+
+    async function createCategory(){
+      const name = document.getElementById('catName').value.trim();
+      const desc = document.getElementById('catDesc').value.trim();
+      if(!name) return alert('Nombre requerido');
+      const res = await apiFetch('/api/admin/categories/', 'POST', {name, description:desc});
+      if(res.ok){ document.getElementById('catForm').reset(); loadCats(); }
+      else alert('Error creando categoría');
+    }
+
+    async function createTemplate(){
+      const name = document.getElementById('tplName').value.trim();
+      const subject = document.getElementById('tplSubject').value.trim();
+      const content = document.getElementById('tplContent').value.trim();
+      if(!name || !content) return alert('Nombre y contenido requeridos');
+      const res = await apiFetch('/api/admin/templates/', 'POST', {name, subject, content});
+      if(res.ok){ document.getElementById('templateForm').reset(); loadTemplates(); }
+      else alert('Error creando plantilla');
+    }
+
+    // --- Deletes (simple) ---
+    async function deleteUser(id){ if(!confirm('Eliminar usuario?')) return; await apiFetch('/api/admin/users/'+id+'/', 'DELETE'); loadUsers(); }
+    async function deleteGroup(id){ if(!confirm('Eliminar grupo?')) return; await apiFetch('/api/admin/groups/'+id+'/', 'DELETE'); loadGroups(); }
+    async function deleteCategory(id){ if(!confirm('Eliminar categoría?')) return; await apiFetch('/api/admin/categories/'+id+'/', 'DELETE'); loadCats(); }
+    async function deleteTemplate(id){ if(!confirm('Eliminar plantilla?')) return; await apiFetch('/api/admin/templates/'+id+'/', 'DELETE'); loadTemplates(); }
+
+    async function deleteAllTest(){ if(!confirm('Confirmar eliminación de todos los items de prueba?')) return; await apiFetch('/api/admin/cleanup/', 'POST'); reloadAll(); }
+
+    // Autoload on page ready
+    window.addEventListener('DOMContentLoaded', ()=>{ reloadAll(); });
+  </script>
+</body>
+</html>
