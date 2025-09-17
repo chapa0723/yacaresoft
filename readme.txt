@@ -17,3 +17,4 @@ crear una app
     python manage.py startapp "nombre"
 levantar el servidor
     python manage.py runserver 8000
+
