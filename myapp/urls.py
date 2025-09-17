@@ -25,7 +25,10 @@ urlpatterns = [
     path('login/', login),
     path('crear-user/', crear_usuario),
     path('recup-pass/', recuperar_contrasena),
+    path('newcode/', validar_codigo),
+    path('newpass/', nueva_contrasena),
 ]
+
 
 
 

@@ -17,6 +17,12 @@ def crear_usuario (request):
 def recuperar_contrasena (request):
     return render(request, 'recup-pass.html')
 
+def validar_codigo (request):
+    return render(request, 'newcode.html')
+
+def nueva_contrasena (request):
+    return render(request, 'newpass.html')
+
 
 
 

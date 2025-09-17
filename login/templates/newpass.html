@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nueva Contraseña</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f3f4f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            width: 350px;
+            text-align: center;
+        }
+        h2 {
+            margin-bottom: 1rem;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 0.5rem 0;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+        }
+        button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 10px;
+            width: 100%;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 1rem;
+        }
+        button:hover {
+            background: #1e40af;
+        }
+        .error {
+            color: red;
+            font-size: 14px;
+            margin-top: 0.5rem;
+        }
+        .success {
+            color: green;
+            font-size: 14px;
+            margin-top: 0.5rem;
+        }
+        .requirements {
+            text-align: left;
+            font-size: 13px;
+            color: #444;
+            margin-top: 0.5rem;
+        }
+    </style>
+    <!-- Cargar Google reCAPTCHA v2 -->
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+</head>
+<body>
+    <div class="container">
+        <h2>Crear Nueva Contraseña</h2>
+        <input type="password" id="password1" placeholder="Nueva contraseña" required>
+        <input type="password" id="password2" placeholder="Repetir contraseña" required>
+
+        <div class="requirements">
+            <p>La contraseña debe contener:</p>
+            <ul>
+                <li>Mínimo 8 caracteres</li>
+                <li>Al menos una mayúscula</li>
+                <li>Al menos una minúscula</li>
+                <li>Al menos un número</li>
+                <li>Al menos un símbolo (!@#$%^&*)</li>
+            </ul>
+        </div>
+
+        <!-- Captcha -->
+        <div class="g-recaptcha" data-sitekey="6Lf38ssrAAAAAInf1IwDnS9y09QXJbSPckFTYmGB"></div>
+
+        <button onclick="guardarPassword()">Guardar Contraseña</button>
+        <p class="error" id="errorMsg"></p>
+        <p class="success" id="successMsg"></p>
+    </div>
+
+    <script>
+        function validarSeguridad(pass) {
+            const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*]).{8,}$/;
+            return regex.test(pass);
+        }
+
+        async function guardarPassword() {
+            const pass1 = document.getElementById("password1").value;
+            const pass2 = document.getElementById("password2").value;
+            const errorMsg = document.getElementById("errorMsg");
+            const successMsg = document.getElementById("successMsg");
+
+            errorMsg.textContent = "";
+            successMsg.textContent = "";
+
+            // Validar que no esté vacío
+            if (!pass1 || !pass2) {
+                errorMsg.textContent = "Por favor completa ambos campos.";
+                return;
+            }
+
+            // Validar seguridad
+            if (!validarSeguridad(pass1)) {
+                errorMsg.textContent = "La contraseña no cumple con los requisitos.";
+                return;
+            }
+
+            // Validar coincidencia
+            if (pass1 !== pass2) {
+                errorMsg.textContent = "Las contraseñas no coinciden.";
+                return;
+            }
+
+            // Validar captcha
+            const captchaResponse = grecaptcha.getResponse();
+            if (!captchaResponse) {
+                errorMsg.textContent = "Por favor completa el captcha.";
+                return;
+            }
+
+            try {
+                const response = await fetch("/api/nueva-password/", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": getCookie("csrftoken")
+                    },
+                    body: JSON.stringify({
+                        password: pass1,
+                        captcha: captchaResponse
+                    })
+                });
+
+                if (response.ok) {
+                    successMsg.textContent = "Contraseña actualizada correctamente.";
+                    setTimeout(() => {
+                        window.location.href = "login.html";
+                    }, 1500);
+                } else {
+                    const data = await response.json();
+                    errorMsg.textContent = data.error || "Error al actualizar la contraseña.";
+                }
+            } catch (err) {
+                errorMsg.textContent = "Error de conexión con el servidor.";
+            }
+        }
+
+        // Obtener CSRF Token de Django
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== "") {
+                const cookies = document.cookie.split(";");
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + "=")) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
+</body>
+</html>

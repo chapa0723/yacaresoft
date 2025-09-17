@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Validar Código</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f3f4f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            text-align: center;
+            width: 300px;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 1rem 0;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+        }
+        button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 10px;
+            width: 100%;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #1e40af;
+        }
+        .error {
+            color: red;
+            font-size: 14px;
+            margin-top: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Validar Código</h2>
+        <p>Ingresa el código recibido por correo electrónico</p>
+        <input type="text" id="codigo" placeholder="Código de verificación" required>
+        <button onclick="validarCodigo()">Validar</button>
+        <p class="error" id="errorMsg"></p>
+    </div>
+
+    <script>
+        async function validarCodigo() {
+            const codigo = document.getElementById("codigo").value.trim();
+            const errorMsg = document.getElementById("errorMsg");
+
+            if (!codigo) {
+                errorMsg.textContent = "Por favor ingresa el código.";
+                return;
+            }
+
+            errorMsg.textContent = "";
+
+            try {
+                // Aquí defines la URL de tu API en Django (por ejemplo /api/validar-codigo/)
+                const response = await fetch("/api/validar-codigo/", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": getCookie("csrftoken") // Necesario en Django
+                    },
+                    body: JSON.stringify({ codigo })
+                });
+
+                if (response.ok) {
+                    // Si todo va bien, redirigimos al login
+                    window.location.href = "login.html";
+                } else {
+                    const data = await response.json();
+                    errorMsg.textContent = data.error || "Código inválido.";
+                }
+            } catch (error) {
+                errorMsg.textContent = "Error de conexión con el servidor.";
+            }
+        }
+
+        // Función para obtener CSRF Token en Django
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== "") {
+                const cookies = document.cookie.split(";");
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + "=")) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
+</body>
+</html>
